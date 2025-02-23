@@ -2,11 +2,11 @@ package product
 
 import (
 	"context"
+	"github.com/google/uuid"
 	"golang-fiber-poc/domain"
 )
 
 type CreateProductRequest struct {
-	ID   string `json:"id"`
 	Name string `json:"name"`
 }
 
@@ -23,8 +23,10 @@ func NewCreateProductHandler(repository Repository) *CreateProductHandler {
 }
 
 func (h *CreateProductHandler) Handle(ctx context.Context, req *CreateProductRequest) (*CreateProductResponse, error) {
+	productId := uuid.New().String()
+
 	product := domain.Product{
-		ID:   req.ID,
+		ID:   productId,
 		Name: req.Name,
 	}
 
