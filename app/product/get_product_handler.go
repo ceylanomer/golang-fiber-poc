@@ -1,6 +1,9 @@
 package product
 
-import "context"
+import (
+	"context"
+	"golang-fiber-poc/app/client"
+)
 
 type GetProductRequest struct {
 	Id string `json:"id" param:"id"`
@@ -13,15 +16,23 @@ type GetProductResponse struct {
 
 type GetProductHandler struct {
 	repository Repository
+	client     client.CustomHttpClient
 }
 
-func NewGetProductHandler(repository Repository) *GetProductHandler {
+func NewGetProductHandler(repository Repository, client client.CustomHttpClient) *GetProductHandler {
 	return &GetProductHandler{
 		repository: repository,
+		client:     client,
 	}
 }
 
 func (h *GetProductHandler) Handle(ctx context.Context, req *GetProductRequest) (*GetProductResponse, error) {
+
+	err := h.client.GetGoogle(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	product, err := h.repository.GetProduct(ctx, req.Id)
 	if err != nil {
 		return nil, err

@@ -14,7 +14,6 @@ import (
 type Repository struct {
 	cluster *gocb.Cluster
 	bucket  *gocb.Bucket
-	tp      *sdktrace.TracerProvider
 	tracer  *OpenTelemetryRequestTracer
 }
 
@@ -47,15 +46,17 @@ func NewRepository(tp *sdktrace.TracerProvider) *Repository {
 	return &Repository{
 		cluster: cluster,
 		bucket:  bucket,
-		tp:      tp,
 		tracer:  tracer,
 	}
 }
 
 func (r *Repository) GetProduct(ctx context.Context, id string) (*domain.Product, error) {
+	ctx, span := r.tracer.Wrapped().Start(ctx, "GetProduct")
+	defer span.End()
 	data, err := r.bucket.DefaultCollection().Get(id, &gocb.GetOptions{
-		Timeout: 3 * time.Second,
-		Context: ctx,
+		Timeout:    3 * time.Second,
+		Context:    ctx,
+		ParentSpan: NewOpenTelemetryRequestSpan(ctx, span),
 	})
 	if err != nil {
 		if errors.Is(err, gocb.ErrDocumentNotFound) {

@@ -18,13 +18,12 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	"go.uber.org/zap"
+	"golang-fiber-poc/app/client"
 	"golang-fiber-poc/app/healthcheck"
 	"golang-fiber-poc/app/product"
 	"golang-fiber-poc/infra/couchbase"
 	"golang-fiber-poc/pkg/config"
 	_ "golang-fiber-poc/pkg/log"
-	"net"
-	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -116,12 +115,15 @@ func main() {
 
 	zap.L().Info("Starting server...")
 
+	httpClient := client.NewHttpClient()
+
 	tp := initTracer()
 	couchbaseRepository := couchbase.NewRepository(tp)
 
 	healthcheckHandler := healthcheck.NewHealthCheckHandler()
-	getProductHandler := product.NewGetProductHandler(couchbaseRepository)
+	getProductHandler := product.NewGetProductHandler(couchbaseRepository, httpClient)
 	createProductHandler := product.NewCreateProductHandler(couchbaseRepository)
+	updateProductHandler := product.NewUpdateProductHandler(couchbaseRepository)
 
 	app := fiber.New(fiber.Config{
 		IdleTimeout:  5 * time.Second,
@@ -152,8 +154,9 @@ func main() {
 		},
 	}))
 
-	productGroup.Post("/", handle[product.CreateProductRequest, product.CreateProductResponse](createProductHandler))
 	productGroup.Get("/:id", handle[product.GetProductRequest, product.GetProductResponse](getProductHandler))
+	productGroup.Post("/", handle[product.CreateProductRequest, product.CreateProductResponse](createProductHandler))
+	productGroup.Put("/:id", handle[product.UpdateProductRequest, product.UpdateProductResponse](updateProductHandler))
 
 	go func() {
 		if err := app.Listen(fmt.Sprintf(":%s", appConfig.Port)); err != nil {
@@ -198,34 +201,6 @@ func initTracer() *sdktrace.TracerProvider {
 	otel.SetTracerProvider(tp)
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
 	return tp
-}
-
-func httpc() {
-	httpClient := &http.Client{
-		Transport: &http.Transport{
-			Dial: (&net.Dialer{
-				Timeout:   30 * time.Second,
-				KeepAlive: 30 * time.Second,
-			}).Dial,
-			TLSHandshakeTimeout:   10 * time.Second,
-			ResponseHeaderTimeout: 10 * time.Second,
-			ExpectContinueTimeout: 1 * time.Second,
-		},
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://www.google.com", nil)
-	if err != nil {
-		zap.L().Error("Failed to create request to google", zap.Error(err))
-	}
-
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		zap.L().Error("Failed to make request to google", zap.Error(err))
-	}
-	zap.L().Info("Response from google", zap.Int("status_code", resp.StatusCode))
 }
 
 func gracefulShutdown(app *fiber.App) {
