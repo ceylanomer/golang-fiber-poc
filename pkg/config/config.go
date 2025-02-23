@@ -13,6 +13,9 @@ func Read() *AppConfig {
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath("$PWD/config")
+	viper.AddConfigPath(".")
+	viper.AddConfigPath("/config")
+	viper.AddConfigPath("./config")
 	err := viper.ReadInConfig()
 	if err != nil {
 		panic(fmt.Errorf("fatal error config file: %w", err))
