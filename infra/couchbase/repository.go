@@ -3,7 +3,9 @@ package couchbase
 import (
 	"context"
 	"errors"
+	. "github.com/couchbase/gocb-opentelemetry"
 	"github.com/couchbase/gocb/v2"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.uber.org/zap"
 	"golang-fiber-poc/domain"
 	"time"
@@ -12,10 +14,12 @@ import (
 type Repository struct {
 	cluster *gocb.Cluster
 	bucket  *gocb.Bucket
+	tp      *sdktrace.TracerProvider
+	tracer  *OpenTelemetryRequestTracer
 }
 
-func NewRepository() *Repository {
-
+func NewRepository(tp *sdktrace.TracerProvider) *Repository {
+	tracer := NewOpenTelemetryRequestTracer(tp)
 	cluster, err := gocb.Connect("couchbase://localhost", gocb.ClusterOptions{
 		TimeoutsConfig: gocb.TimeoutsConfig{
 			ConnectTimeout: 3 * time.Second,
@@ -27,6 +31,7 @@ func NewRepository() *Repository {
 			Password: "123456789",
 		},
 		Transcoder: gocb.NewJSONTranscoder(),
+		Tracer:     tracer,
 	})
 
 	if err != nil {
@@ -42,6 +47,8 @@ func NewRepository() *Repository {
 	return &Repository{
 		cluster: cluster,
 		bucket:  bucket,
+		tp:      tp,
+		tracer:  tracer,
 	}
 }
 
@@ -69,9 +76,23 @@ func (r *Repository) GetProduct(ctx context.Context, id string) (*domain.Product
 }
 
 func (r *Repository) CreateProduct(ctx context.Context, product *domain.Product) error {
+	ctx, span := r.tracer.Wrapped().Start(ctx, "CreateProduct")
+	defer span.End()
 	_, err := r.bucket.DefaultCollection().Insert(product.ID, product, &gocb.InsertOptions{
-		Timeout: 3 * time.Second,
-		Context: ctx,
+		Timeout:    3 * time.Second,
+		Context:    ctx,
+		ParentSpan: NewOpenTelemetryRequestSpan(ctx, span),
+	})
+	return err
+}
+
+func (r *Repository) UpdateProduct(ctx context.Context, product *domain.Product) error {
+	ctx, span := r.tracer.Wrapped().Start(ctx, "UpdateProduct")
+	defer span.End()
+	_, err := r.bucket.DefaultCollection().Replace(product.ID, product, &gocb.ReplaceOptions{
+		Timeout:    3 * time.Second,
+		Context:    ctx,
+		ParentSpan: NewOpenTelemetryRequestSpan(ctx, span),
 	})
 	return err
 }
