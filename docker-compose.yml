@@ -1,15 +1,15 @@
 services:
-  app:
-    build: .
-    ports:
-      - "8080:8080"
-    depends_on:
-      - jaeger
-      - prometheus
-      - couchbase
-    environment:
-      - JAEGER_AGENT_HOST=jaeger
-      - JAEGER_AGENT_PORT=6831
+#  app:
+#    build: .
+#    ports:
+#      - "8080:8080"
+#    depends_on:
+#      - jaeger
+#      - prometheus
+#      - couchbase
+#    environment:
+#      - JAEGER_AGENT_HOST=jaeger
+#      - JAEGER_AGENT_PORT=6831
 
   prometheus:
     image: prom/prometheus:latest

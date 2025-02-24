@@ -5,25 +5,14 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.uber.org/zap"
 	"io"
-	"net"
 	"net/http"
-	"time"
 )
 
 type CustomHttpClient struct {
 	*http.Client
 }
 
-func NewHttpClient() CustomHttpClient {
-	transport := &http.Transport{
-		Dial: (&net.Dialer{
-			Timeout:   30 * time.Second,
-			KeepAlive: 30 * time.Second,
-		}).Dial,
-		TLSHandshakeTimeout:   10 * time.Second,
-		ResponseHeaderTimeout: 10 * time.Second,
-		ExpectContinueTimeout: 1 * time.Second,
-	}
+func NewHttpClient(transport *http.Transport) CustomHttpClient {
 
 	httpClient := &http.Client{
 		Transport: otelhttp.NewTransport(transport),
@@ -34,7 +23,7 @@ func NewHttpClient() CustomHttpClient {
 
 func (c *CustomHttpClient) GetGoogle(ctx context.Context) error {
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://www.google.com", nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://localhost:8081/timeout", nil)
 	if err != nil {
 		zap.L().Error("Failed to create request to google", zap.Error(err))
 		return err

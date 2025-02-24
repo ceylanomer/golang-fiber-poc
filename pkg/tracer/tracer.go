@@ -21,7 +21,7 @@ func InitTracer() *trace.TracerProvider {
 	exporter, err := otlptrace.New(
 		context.Background(),
 		otlptracehttp.NewClient(
-			otlptracehttp.WithEndpoint("jaeger:4318"),
+			otlptracehttp.WithEndpoint("localhost:4318"),
 			otlptracehttp.WithHeaders(headers),
 			otlptracehttp.WithInsecure(),
 		),

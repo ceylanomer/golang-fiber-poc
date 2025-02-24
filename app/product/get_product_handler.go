@@ -16,10 +16,10 @@ type GetProductResponse struct {
 
 type GetProductHandler struct {
 	repository Repository
-	client     client.CustomHttpClient
+	client     client.CustomRetryableClient
 }
 
-func NewGetProductHandler(repository Repository, client client.CustomHttpClient) *GetProductHandler {
+func NewGetProductHandler(repository Repository, client client.CustomRetryableClient) *GetProductHandler {
 	return &GetProductHandler{
 		repository: repository,
 		client:     client,
@@ -28,7 +28,7 @@ func NewGetProductHandler(repository Repository, client client.CustomHttpClient)
 
 func (h *GetProductHandler) Handle(ctx context.Context, req *GetProductRequest) (*GetProductResponse, error) {
 
-	err := h.client.GetGoogle(ctx)
+	err := h.client.GetError(ctx)
 	if err != nil {
 		return nil, err
 	}

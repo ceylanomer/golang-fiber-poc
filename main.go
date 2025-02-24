@@ -30,13 +30,15 @@ func main() {
 
 	zap.L().Info("Starting server...")
 
-	httpClient := client.NewHttpClient()
+	transport := client.NewTransport()
+	_ = client.NewHttpClient(transport)
+	retryableClient := client.NewRetryableClient(transport)
 
 	tp := tracer.InitTracer()
 	couchbaseRepository := couchbase.NewRepository(tp)
 
 	healthcheckHandler := healthcheck.NewHealthCheckHandler()
-	getProductHandler := product.NewGetProductHandler(couchbaseRepository, httpClient)
+	getProductHandler := product.NewGetProductHandler(couchbaseRepository, retryableClient)
 	createProductHandler := product.NewCreateProductHandler(couchbaseRepository)
 	updateProductHandler := product.NewUpdateProductHandler(couchbaseRepository)
 
