@@ -48,13 +48,11 @@ func (c *CustomHttpClient) GetGoogle(ctx context.Context) error {
 
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
+	_, err = io.ReadAll(resp.Body)
 	if err != nil {
 		zap.L().Error("Failed to read response from google", zap.Error(err))
 		return err
 	}
-
-	zap.L().Info("Response from google", zap.String("body", string(body)))
 
 	return nil
 }
