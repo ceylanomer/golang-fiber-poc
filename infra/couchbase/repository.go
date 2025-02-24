@@ -19,7 +19,7 @@ type Repository struct {
 
 func NewRepository(tp *sdktrace.TracerProvider) *Repository {
 	tracer := NewOpenTelemetryRequestTracer(tp)
-	cluster, err := gocb.Connect("couchbase://localhost", gocb.ClusterOptions{
+	cluster, err := gocb.Connect("couchbase://couchbase", gocb.ClusterOptions{
 		TimeoutsConfig: gocb.TimeoutsConfig{
 			ConnectTimeout: 3 * time.Second,
 			KVTimeout:      3 * time.Second,
