@@ -7,6 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/adaptor"
 	"github.com/gofiber/fiber/v2/middleware/basicauth"
 	recover "github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 	"golang-fiber-poc/app/client"
@@ -19,9 +20,35 @@ import (
 	"golang-fiber-poc/pkg/tracer"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 )
+
+var httpRequestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+	Name:    "http_request_duration_seconds",
+	Help:    "Duration of HTTP requests",
+	Buckets: []float64{.005, .01, .025, .05, .1, .25, .5, 1, 2.5, 5, 10},
+}, []string{"route", "method", "status"})
+
+func init() {
+	prometheus.MustRegister(httpRequestDuration)
+}
+
+func RequestDurationMiddleware() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		start := time.Now()
+		err := c.Next()
+		duration := time.Since(start).Seconds()
+		status := strconv.Itoa(c.Response().StatusCode())
+		httpRequestDuration.WithLabelValues(
+			c.Route().Path,
+			c.Method(),
+			status,
+		).Observe(duration)
+		return err
+	}
+}
 
 func main() {
 	appConfig := config.Read()
@@ -48,6 +75,7 @@ func main() {
 
 	app.Use(recover.New())
 	app.Use(otelfiber.Middleware())
+	app.Use(RequestDurationMiddleware())
 
 	app.Get("/healthcheck", handler.Handle[healthcheck.Request, healthcheck.Response](healthcheckHandler))
 	app.Get("/metrics", adaptor.HTTPHandler(promhttp.Handler()))
