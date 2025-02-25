@@ -1,1 +1,17 @@
 port: 8080
+couchbase:
+  url: couchbase://couchbase
+  username: Administrator
+  password: 123456789
+  bucket: products
+jaeger:
+  url: jaeger:4318
+
+#port: 8080
+#couchbase:
+#  url: couchbase://localhost
+#  username: Administrator
+#  password: 123456789
+#  bucket: products
+#jaeger:
+#  url: localhost:14268

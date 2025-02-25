@@ -2,13 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/gofiber/contrib/otelfiber/v2"
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/adaptor"
-	"github.com/gofiber/fiber/v2/middleware/basicauth"
-	recover "github.com/gofiber/fiber/v2/middleware/recover"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"go.uber.org/zap"
 	"golang-fiber-poc/app/client"
 	"golang-fiber-poc/app/healthcheck"
 	"golang-fiber-poc/app/product"
@@ -16,12 +9,19 @@ import (
 	"golang-fiber-poc/pkg/config"
 	"golang-fiber-poc/pkg/handler"
 	_ "golang-fiber-poc/pkg/log"
-	"golang-fiber-poc/pkg/middlewares/prometheus"
 	"golang-fiber-poc/pkg/tracer"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/gofiber/contrib/otelfiber/v2"
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/adaptor"
+	"github.com/gofiber/fiber/v2/middleware/basicauth"
+	recover "github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.uber.org/zap"
 )
 
 func main() {
@@ -34,8 +34,8 @@ func main() {
 	_ = client.NewHttpClient(transport)
 	retryableClient := client.NewRetryableClient(transport)
 
-	tp := tracer.InitTracer()
-	couchbaseRepository := couchbase.NewRepository(tp)
+	tp := tracer.InitTracer(appConfig.Jaeger)
+	couchbaseRepository := couchbase.NewRepository(tp, appConfig.Couchbase)
 
 	healthcheckHandler := healthcheck.NewHealthCheckHandler()
 	getProductHandler := product.NewGetProductHandler(couchbaseRepository, retryableClient)
@@ -51,7 +51,7 @@ func main() {
 
 	app.Use(recover.New())
 	app.Use(otelfiber.Middleware())
-	app.Use(prometheus.RequestDurationMiddleware())
+	//app.Use(prometheus.RequestDurationMiddleware())
 
 	app.Get("/healthcheck", handler.Handle[healthcheck.Request, healthcheck.Response](healthcheckHandler))
 	app.Get("/metrics", adaptor.HTTPHandler(promhttp.Handler()))

@@ -3,6 +3,10 @@ package product
 import (
 	"context"
 	"golang-fiber-poc/app/client"
+	"golang-fiber-poc/pkg/circuitbreaker"
+	"time"
+
+	"github.com/sony/gobreaker"
 )
 
 type GetProductRequest struct {
@@ -17,18 +21,30 @@ type GetProductResponse struct {
 type GetProductHandler struct {
 	repository Repository
 	client     client.CustomRetryableClient
+	cb         *gobreaker.CircuitBreaker
 }
 
 func NewGetProductHandler(repository Repository, client client.CustomRetryableClient) *GetProductHandler {
+	cb := circuitbreaker.NewCircuitBreaker(circuitbreaker.CircuitBreakerConfig{
+		Name:                    "get-product",
+		MaxRequests:             3,
+		Interval:                10 * time.Second,
+		Timeout:                 5 * time.Second,
+		RequestsVolumeThreshold: 10,
+		FailureThreshold:        0.6,
+	})
 	return &GetProductHandler{
 		repository: repository,
 		client:     client,
+		cb:         cb,
 	}
 }
 
 func (h *GetProductHandler) Handle(ctx context.Context, req *GetProductRequest) (*GetProductResponse, error) {
-
-	err := h.client.GetError(ctx)
+	// Execute GetError through circuit breaker
+	_, err := h.cb.Execute(func() (interface{}, error) {
+		return nil, h.client.GetTest(ctx)
+	})
 	if err != nil {
 		return nil, err
 	}

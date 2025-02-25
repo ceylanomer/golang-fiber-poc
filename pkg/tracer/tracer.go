@@ -2,17 +2,19 @@ package tracer
 
 import (
 	"context"
+	"golang-fiber-poc/pkg/config"
+
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
-	"go.opentelemetry.io/otel/semconv/v1.4.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	"go.uber.org/zap"
 )
 
-func InitTracer() *trace.TracerProvider {
+func InitTracer(jaegerConfig config.JaegerConfig) *trace.TracerProvider {
 
 	headers := map[string]string{
 		"content-type": "application/json",
@@ -21,7 +23,7 @@ func InitTracer() *trace.TracerProvider {
 	exporter, err := otlptrace.New(
 		context.Background(),
 		otlptracehttp.NewClient(
-			otlptracehttp.WithEndpoint("localhost:4318"),
+			otlptracehttp.WithEndpoint(jaegerConfig.URL),
 			otlptracehttp.WithHeaders(headers),
 			otlptracehttp.WithInsecure(),
 		),

@@ -6,7 +6,20 @@ import (
 )
 
 type AppConfig struct {
-	Port string `yaml:"port"`
+	Port      string          `yaml:"port"`
+	Couchbase CouchbaseConfig `yaml:"couchbase"`
+	Jaeger    JaegerConfig    `yaml:"jaeger"`
+}
+
+type CouchbaseConfig struct {
+	URL      string `yaml:"url"`
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
+	Bucket   string `yaml:"bucket"`
+}
+
+type JaegerConfig struct {
+	URL string `yaml:"url"`
 }
 
 func Read() *AppConfig {
