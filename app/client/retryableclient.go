@@ -38,7 +38,7 @@ func (c *CustomRetryableClient) GetTimeout(ctx context.Context) error {
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://localhost:8081/timeout", nil)
 	if err != nil {
-		zap.L().Error("Failed to create request to google", zap.Error(err))
+		zap.L().Error("Failed to create request to timeout", zap.Error(err))
 		return err
 	}
 
@@ -50,7 +50,7 @@ func (c *CustomRetryableClient) GetTimeout(ctx context.Context) error {
 
 	resp, err := c.Client.Do(retryableRequest)
 	if err != nil {
-		zap.L().Error("Failed to make request to google", zap.Error(err))
+		zap.L().Error("Failed to make request to timeout", zap.Error(err))
 		return err
 	}
 
@@ -58,7 +58,7 @@ func (c *CustomRetryableClient) GetTimeout(ctx context.Context) error {
 
 	_, err = io.ReadAll(resp.Body)
 	if err != nil {
-		zap.L().Error("Failed to read response from google", zap.Error(err))
+		zap.L().Error("Failed to read response from timeout", zap.Error(err))
 		return err
 	}
 
@@ -81,7 +81,7 @@ func (c *CustomRetryableClient) GetError(ctx context.Context) error {
 
 	resp, err := c.Client.Do(retryableRequest)
 	if err != nil {
-		zap.L().Error("Failed to make request to google", zap.Error(err))
+		zap.L().Error("Failed to make request to error", zap.Error(err))
 		return err
 	}
 
@@ -89,7 +89,7 @@ func (c *CustomRetryableClient) GetError(ctx context.Context) error {
 
 	_, err = io.ReadAll(resp.Body)
 	if err != nil {
-		zap.L().Error("Failed to read response from google", zap.Error(err))
+		zap.L().Error("Failed to read response from error", zap.Error(err))
 		return err
 	}
 
@@ -112,7 +112,7 @@ func (c *CustomRetryableClient) GetTest(ctx context.Context) error {
 
 	resp, err := c.Client.Do(retryableRequest)
 	if err != nil {
-		zap.L().Error("Failed to make request to google", zap.Error(err))
+		zap.L().Error("Failed to make request to test", zap.Error(err))
 		return err
 	}
 
@@ -120,7 +120,7 @@ func (c *CustomRetryableClient) GetTest(ctx context.Context) error {
 
 	_, err = io.ReadAll(resp.Body)
 	if err != nil {
-		zap.L().Error("Failed to read response from google", zap.Error(err))
+		zap.L().Error("Failed to read response from test", zap.Error(err))
 		return err
 	}
 

@@ -19,12 +19,13 @@ type GetProductResponse struct {
 }
 
 type GetProductHandler struct {
-	repository Repository
-	client     client.CustomRetryableClient
-	cb         *gobreaker.CircuitBreaker
+	repository    Repository
+	client        client.CustomRetryableClient
+	noRetryClient client.CustomHttpClient
+	cb            *gobreaker.CircuitBreaker
 }
 
-func NewGetProductHandler(repository Repository, client client.CustomRetryableClient) *GetProductHandler {
+func NewGetProductHandler(repository Repository, client client.CustomRetryableClient, noRetryClient client.CustomHttpClient) *GetProductHandler {
 	cb := circuitbreaker.NewCircuitBreaker(circuitbreaker.CircuitBreakerConfig{
 		Name:                    "get-product",
 		MaxRequests:             3,
@@ -33,17 +34,19 @@ func NewGetProductHandler(repository Repository, client client.CustomRetryableCl
 		RequestsVolumeThreshold: 10,
 		FailureThreshold:        0.6,
 	})
+
 	return &GetProductHandler{
-		repository: repository,
-		client:     client,
-		cb:         cb,
+		repository:    repository,
+		client:        client,
+		noRetryClient: noRetryClient,
+		cb:            cb,
 	}
 }
 
 func (h *GetProductHandler) Handle(ctx context.Context, req *GetProductRequest) (*GetProductResponse, error) {
 	// Execute GetError through circuit breaker
 	_, err := h.cb.Execute(func() (interface{}, error) {
-		return nil, h.client.GetTest(ctx)
+		return nil, h.noRetryClient.GetError(ctx)
 	})
 	if err != nil {
 		return nil, err
